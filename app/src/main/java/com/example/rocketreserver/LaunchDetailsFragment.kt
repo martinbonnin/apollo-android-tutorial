@@ -37,6 +37,7 @@ class LaunchDetailsFragment : Fragment() {
             val response = try {
                 apolloClient(requireContext()).query(LaunchDetailsQuery(id = args.launchId)).toDeferred().await()
             } catch (e: ApolloException) {
+                Log.e("Apollo", "Oh no... A protocol error happened", e)
                 binding.progressBar.visibility = View.GONE
                 binding.error.text = "Oh no... A protocol error happened"
                 binding.error.visibility = View.VISIBLE

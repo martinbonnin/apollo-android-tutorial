@@ -2,8 +2,9 @@ plugins {
     id("com.android.application")
     id("kotlin-android")
     id("androidx.navigation.safeargs.kotlin")
-    id("com.apollographql.apollo").version("2.1.0")
+    id("com.apollographql.apollo").version("2.2.0")
 }
+
 
 android {
     compileSdkVersion(29)
@@ -15,10 +16,6 @@ android {
         targetSdkVersion(29)
         versionCode = 1
         versionName = "1.0"
-    }
-
-    buildFeatures {
-        viewBinding = true
     }
 
     compileOptions {
@@ -38,8 +35,8 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.1.0")
     implementation("androidx.core:core-ktx:1.2.0")
     implementation("androidx.constraintlayout:constraintlayout:1.1.3")
-    implementation("com.apollographql.apollo:apollo-runtime:2.1.0")
-    implementation("com.apollographql.apollo:apollo-coroutines-support:2.1.0")
+    implementation("com.apollographql.apollo:apollo-runtime:2.2.0")
+    implementation("com.apollographql.apollo:apollo-coroutines-support:2.2.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.2.0")
     implementation("androidx.recyclerview:recyclerview:1.1.0")
     implementation("io.coil-kt:coil:0.11.0")
