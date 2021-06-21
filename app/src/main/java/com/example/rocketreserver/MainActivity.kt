@@ -11,6 +11,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        disposable = CompositeDisposable()
         setContentView(R.layout.activity_main)
 
         val subscription = apolloClient(this@MainActivity).subscribe(TripsBookedSubscription()).retry().subscribe {

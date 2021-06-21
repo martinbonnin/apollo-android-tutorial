@@ -9,7 +9,9 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.rocketreserver.databinding.LaunchListFragmentBinding
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
 
 class LaunchListFragment : Fragment() {
     private lateinit var binding: LaunchListFragmentBinding
@@ -61,7 +63,8 @@ class LaunchListFragment : Fragment() {
             LaunchListQuery(
                 cursor = cursor
             )
-        ).subscribe(
+        )
+            .observeOn(AndroidSchedulers.mainThread()).subscribe(
             { response ->
                 val newLaunches = response.data?.launches?.launches?.filterNotNull()
 

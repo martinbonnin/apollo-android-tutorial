@@ -42,6 +42,7 @@ dependencies {
     implementation("com.apollographql.apollo3:apollo-rx2-support:3.0.0-dev13")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.2.0")
     implementation("androidx.recyclerview:recyclerview:1.1.0")
+    implementation("io.reactivex.rxjava2:rxandroid:2.0.1")
     implementation("io.coil-kt:coil:0.11.0")
     implementation("androidx.navigation:navigation-fragment-ktx:2.3.0-rc01")
     implementation("androidx.navigation:navigation-ui-ktx:2.3.0-rc01")

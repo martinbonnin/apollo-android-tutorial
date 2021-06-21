@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.example.rocketreserver.databinding.LoginFragmentBinding
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 
 class LoginFragment : Fragment() {
@@ -34,7 +35,8 @@ class LoginFragment : Fragment() {
 
             binding.submitProgressBar.visibility = View.VISIBLE
             binding.submit.visibility = View.GONE
-            val subscription = apolloClient(requireContext()).mutate(LoginMutation(email = email)).subscribe(
+            val subscription = apolloClient(requireContext()).mutate(LoginMutation(email = email)).observeOn(
+                AndroidSchedulers.mainThread()).subscribe(
                 { response ->
                     val login = response?.data?.login
                     if (login == null || response.hasErrors()) {

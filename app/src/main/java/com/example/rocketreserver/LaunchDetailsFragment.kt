@@ -9,6 +9,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import coil.api.load
 import com.example.rocketreserver.databinding.LaunchDetailsFragmentBinding
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 
 class LaunchDetailsFragment : Fragment() {
@@ -36,7 +37,8 @@ class LaunchDetailsFragment : Fragment() {
         binding.progressBar.visibility = View.VISIBLE
         binding.error.visibility = View.GONE
 
-        val subscription = apolloClient(requireContext()).query(LaunchDetailsQuery(id = args.launchId)).subscribe(
+        val subscription =
+            apolloClient(requireContext()).query(LaunchDetailsQuery(id = args.launchId)).observeOn(AndroidSchedulers.mainThread()).subscribe(
                 { response ->
                     val launch = response.data?.launch
                     if (launch == null || response.hasErrors()) {
@@ -95,24 +97,26 @@ class LaunchDetailsFragment : Fragment() {
             binding.bookButton.visibility = View.INVISIBLE
             binding.bookProgressBar.visibility = View.VISIBLE
 
-                val mutation = if (isBooked) {
-                    CancelTripMutation(id = args.launchId)
-                } else {
-                    BookTripMutation(id = args.launchId)
-                }
+            val mutation = if (isBooked) {
+                CancelTripMutation(id = args.launchId)
+            } else {
+                BookTripMutation(id = args.launchId)
+            }
 
-                val subscription = apolloClient(requireContext()).mutate(mutation).subscribe(
-                    { response ->
-                        if (response.hasErrors()) {
-                            configureButton(isBooked)
-                        } else {
-                            configureButton(!isBooked)
-                        }
-                    },
-                    {
+            val subscription = apolloClient(requireContext()).mutate(mutation).observeOn(
+                AndroidSchedulers.mainThread()).subscribe(
+                { response ->
+                    if (response.hasErrors()) {
                         configureButton(isBooked)
+                    } else {
+                        configureButton(!isBooked)
                     }
-                )
+                },
+                {
+                    configureButton(isBooked)
+                }
+            )
+            disposable.add(subscription)
         }
     }
 }
