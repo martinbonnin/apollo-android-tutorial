@@ -6,15 +6,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
-import com.apollographql.apollo3.api.Input
-import com.apollographql.apollo3.coroutines.toDeferred
 import com.example.rocketreserver.databinding.LoginFragmentBinding
-import java.lang.Exception
+import io.reactivex.disposables.CompositeDisposable
 
 class LoginFragment : Fragment() {
     private lateinit var binding: LoginFragmentBinding
+    private lateinit var disposable: CompositeDisposable
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         binding = LoginFragmentBinding.inflate(inflater, container, false)
@@ -23,6 +21,8 @@ class LoginFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        disposable = CompositeDisposable()
 
         binding.submitProgressBar.visibility = View.GONE
         binding.submit.setOnClickListener {
@@ -34,23 +34,30 @@ class LoginFragment : Fragment() {
 
             binding.submitProgressBar.visibility = View.VISIBLE
             binding.submit.visibility = View.GONE
-            lifecycleScope.launchWhenResumed {
-                val response = try {
-                    apolloClient(requireContext()).mutate(LoginMutation(email = Input.fromNullable(email))).toDeferred().await()
-                } catch (e: Exception) {
-                    null
-                }
+            val subscription = apolloClient(requireContext()).mutate(LoginMutation(email = email)).subscribe(
+                { response ->
+                    val login = response?.data?.login
+                    if (login == null || response.hasErrors()) {
+                        binding.submitProgressBar.visibility = View.GONE
+                        binding.submit.visibility = View.VISIBLE
+                        return@subscribe
+                    }
 
-                val login = response?.data?.login
-                if (login == null || response.hasErrors()) {
-                    binding.submitProgressBar.visibility = View.GONE
-                    binding.submit.visibility = View.VISIBLE
-                    return@launchWhenResumed
-                }
+                    User.setToken(requireContext(), login)
+                    findNavController().popBackStack()
+                },
+                {
 
-                User.setToken(requireContext(), login)
-                findNavController().popBackStack()
-            }
+                }
+            )
+            disposable.add(subscription)
+
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        disposable.dispose()
     }
 }

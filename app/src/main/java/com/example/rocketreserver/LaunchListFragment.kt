@@ -6,54 +6,63 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.apollographql.apollo3.api.Input
-import com.apollographql.apollo3.coroutines.toDeferred
-import com.apollographql.apollo3.exception.ApolloException
 import com.example.rocketreserver.databinding.LaunchListFragmentBinding
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
+import io.reactivex.disposables.CompositeDisposable
 
 class LaunchListFragment : Fragment() {
     private lateinit var binding: LaunchListFragmentBinding
+    private lateinit var disposable: CompositeDisposable
+    private lateinit var launches: MutableList<LaunchListQuery.Launch>
+    private lateinit var adapter: LaunchListAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        disposable = CompositeDisposable()
         binding = LaunchListFragmentBinding.inflate(inflater)
         return binding.root
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        disposable.dispose()
+    }
+
+    var cursor: String? = null
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val launches = mutableListOf<LaunchListQuery.Launch>()
-        val adapter = LaunchListAdapter(launches)
+        launches = mutableListOf()
+        adapter = LaunchListAdapter(launches)
         binding.launches.layoutManager = LinearLayoutManager(requireContext())
         binding.launches.adapter = adapter
 
-        val channel = Channel<Unit>(Channel.CONFLATED)
 
-        // offer a first item to do the initial load else the list will stay empty forever
-        channel.offer(Unit)
+        getMoreData()
         adapter.onEndOfListReached = {
-            channel.offer(Unit)
+            disposable.dispose()
+            getMoreData()
         }
 
-        lifecycleScope.launchWhenResumed {
-            var cursor: String? = null
-            for (item in channel) {
-                val response = try {
-                    apolloClient(requireContext()).query(LaunchListQuery(cursor = Input.fromNullable(cursor))).toDeferred().await()
-                } catch (e: ApolloException) {
-                    Log.d("LaunchList", "Failure", e)
-                    return@launchWhenResumed
-                }
+        adapter.onItemClicked = { launch ->
+            findNavController().navigate(
+                LaunchListFragmentDirections.openLaunchDetails(launchId = launch.id)
+            )
+        }
+    }
 
+    private fun getMoreData() {
+        val subscription = apolloClient(requireContext()).query(
+            LaunchListQuery(
+                cursor = cursor
+            )
+        ).subscribe(
+            { response ->
                 val newLaunches = response.data?.launches?.launches?.filterNotNull()
 
                 if (newLaunches != null) {
@@ -63,18 +72,16 @@ class LaunchListFragment : Fragment() {
 
                 cursor = response.data?.launches?.cursor
                 if (response.data?.launches?.hasMore != true) {
-                    break
+                    adapter.onEndOfListReached = null
                 }
+
+            },
+            {
+                Log.d("LaunchList", "Failure", it)
             }
+        )
 
-            adapter.onEndOfListReached = null
-            channel.close()
-        }
+        disposable.add(subscription)
 
-        adapter.onItemClicked = { launch ->
-            findNavController().navigate(
-                LaunchListFragmentDirections.openLaunchDetails(launchId = launch.id)
-            )
-        }
     }
 }
